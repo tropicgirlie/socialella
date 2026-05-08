@@ -64,6 +64,10 @@ Solo-founder social media queue — compose once, tune per platform, and ship po
 4. After deploy, run `npm run db:push` locally pointed at production `DATABASE_URL`, or use Drizzle migrate in CI.
 5. Cron: `vercel.json` schedules `/api/cron/dispatch` every 15 minutes. Add the same `CRON_SECRET` value in Vercel → Cron → environment so the handler authorizes requests.
 
+### Preview URLs show “couldn’t load” / 500
+
+If **Production** has `DATABASE_URL`, `AUTH_SECRET`, `APP_PASSWORD_HASH`, and `CRON_SECRET` but **Preview** does not, every Git preview deployment will crash when you open the app (the dashboard calls the database). In Vercel: **Settings → Environment Variables** → open each variable → under **Environments**, enable **Preview** (and **Development** if you use `vercel dev`) with the same values, then **Redeploy**.
+
 ## Product notes
 
 - **Scaffold publishing**: scheduling moves posts to **Ready to post**; you copy text and open deep links, then **Mark posted**.
