@@ -23,6 +23,7 @@ const NAV = [
   { href: "/compose", label: "Compose", icon: "ClipboardText" as const },
   { href: "/library", label: "Library", icon: "Tray" as const },
   { href: "/apps", label: "Apps", icon: "RocketLaunch" as const },
+  { href: "/connections", label: "Connections", icon: "UsersThree" as const },
   { href: "/safety", label: "Safety", icon: "ShieldCheck" as const },
   { href: "/settings", label: "Settings", icon: "Lightning" as const },
 ];

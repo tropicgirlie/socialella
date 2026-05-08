@@ -22,10 +22,11 @@ import {
 } from "date-fns";
 import { toast } from "sonner";
 import type { posts } from "@/db/schema";
-import { reschedulePost, markPosted } from "@/actions/posts";
+import { reschedulePost } from "@/actions/posts";
 import { mergeKeepLocalTime } from "@/lib/date-utils";
 import { PLATFORM_LABELS, PLATFORMS, type PlatformId } from "@/lib/constants";
 import { getComposerDeepLink } from "@/lib/platform-links";
+import { HandoffPanel } from "@/components/handoff/handoff-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -113,17 +114,10 @@ export function QueueView(props: {
       <TabsContent value="list" className="space-y-8">
         <PostSection
           title="Ready to post"
-          description="Copy into each platform, then mark done."
+          description="One tap per platform — caption goes to your clipboard, the composer opens, you review and post."
           posts={ready}
           appNames={props.appNames}
           mode="ready"
-          onMarkPosted={(id) =>
-            startTransition(async () => {
-              await markPosted(id);
-              toast.success("Marked as posted.");
-              router.refresh();
-            })
-          }
         />
         <PostSection
           title="Scheduled"
@@ -300,13 +294,12 @@ function PostSection(props: {
   posts: PostRow[];
   appNames: Record<string, string>;
   mode: "ready" | "scheduled" | "posted";
-  onMarkPosted?: (id: string) => void;
 }) {
   const router = useRouter();
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-lg font-semibold">{props.title}</h2>
+        <h2 className="font-display text-2xl tracking-tight">{props.title}</h2>
         <p className="text-sm text-[var(--color-text-muted)]">
           {props.description}
         </p>
@@ -333,38 +326,17 @@ function PostSection(props: {
                       : "No schedule"}
                 </p>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+              <CardContent className="space-y-4 text-sm">
                 <p className="line-clamp-4 whitespace-pre-wrap">
                   {post.baseContent || "(empty)"}
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {PLATFORMS.map((p) => (
-                    <Button key={p} size="sm" variant="outline" asChild>
-                      <a
-                        href={getComposerDeepLink(
-                          p as PlatformId,
-                          post.baseContent,
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {PLATFORM_LABELS[p as PlatformId]}
-                      </a>
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-2">
+
+                {props.mode === "ready" && <HandoffPanel postId={post.id} />}
+
+                <div className="flex flex-wrap gap-2 pt-1">
                   <Button size="sm" variant="secondary" asChild>
                     <Link href={`/compose?id=${post.id}`}>Edit</Link>
                   </Button>
-                  {props.mode === "ready" && props.onMarkPosted && (
-                    <Button
-                      size="sm"
-                      onClick={() => props.onMarkPosted?.(post.id)}
-                    >
-                      Mark posted
-                    </Button>
-                  )}
                   {props.mode === "scheduled" && (
                     <form
                       className="flex flex-wrap items-center gap-2"

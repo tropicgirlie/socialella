@@ -15,7 +15,8 @@ export default async function QueuePage() {
       <div>
         <h1 className="font-display text-4xl tracking-tight">Queue</h1>
         <p className="text-[var(--color-text-muted)]">
-          Scaffold publishing — copy to platforms, then mark posted here.
+          One tap per platform — caption to clipboard, composer opens, you
+          review and post. <a className="underline underline-offset-2 hover:text-[var(--color-text)]" href="/connections">How sending works</a>.
         </p>
       </div>
       <QueueView
