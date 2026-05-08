@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Settings</h1>
+        <h1 className="font-display text-4xl tracking-tight">Settings</h1>
         <p className="text-[var(--color-text-muted)]">
           Digests, evergreen cadence, and optional energy windows for gentler
           scheduling.

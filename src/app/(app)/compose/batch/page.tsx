@@ -9,7 +9,7 @@ export default async function BatchComposePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">
+        <h1 className="font-display text-4xl tracking-tight">
           Batch compose
         </h1>
         <p className="text-[var(--color-text-muted)]">

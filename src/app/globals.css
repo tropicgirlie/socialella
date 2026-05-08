@@ -4,6 +4,7 @@
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
   --color-background: var(--color-bg);
   --color-foreground: var(--color-text);
   --color-muted: var(--color-text-muted);
@@ -30,7 +31,8 @@
     color: var(--color-text);
     font-family: var(--font-sans);
     font-size: var(--text-base);
-    line-height: 1.5;
+    line-height: 1.55;
+    font-feature-settings: "ss01", "ss02";
   }
 
   :focus-visible {
@@ -46,5 +48,24 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+@layer utilities {
+  /* Display serif headings — used on page titles and the wordmark.
+     Fraunces with optical SOFT axis tuned for editorial warmth. */
+  .font-display {
+    font-family: var(--font-display);
+    font-feature-settings: "ss01" on, "ss02" on, "ss03" on;
+    font-variation-settings: "SOFT" 70, "opsz" 144;
+    letter-spacing: -0.015em;
+  }
+
+  /* Tiny editorial S-mark used as a wordmark prefix */
+  .editorial-mark {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 600;
+    font-variation-settings: "SOFT" 100, "opsz" 144;
   }
 }

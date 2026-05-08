@@ -17,7 +17,7 @@ export default async function SafetyPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Safety kit</h1>
+          <h1 className="font-display text-4xl tracking-tight">Safety kit</h1>
           <p className="text-[var(--color-text-muted)]">
             Strip metadata on uploads (Compose), log incidents, export evidence.
           </p>

@@ -9,7 +9,7 @@ const REQUIRED_SERVER_ENV = [
 function MissingEnvNotice({ missing }: { missing: string[] }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-bg)] p-6 text-center text-[var(--color-text)]">
-      <h1 className="text-xl font-semibold">Configuration missing</h1>
+      <h1 className="font-display text-3xl">Configuration missing</h1>
       <p className="max-w-md text-sm text-[var(--color-text-muted)]">
         This environment is missing:{" "}
         <span className="font-mono text-[var(--color-text)]">

@@ -36,6 +36,31 @@ function activeNavHref(pathname: string) {
   return matches.sort((a, b) => b.href.length - a.href.length)[0]?.href;
 }
 
+function Wordmark({ size = "default" }: { size?: "default" | "sm" }) {
+  return (
+    <span className="flex items-baseline gap-1.5">
+      <span
+        aria-hidden
+        className={cn(
+          "editorial-mark text-[var(--color-accent)] leading-none",
+          size === "sm" ? "text-2xl" : "text-3xl",
+        )}
+      >
+        S
+      </span>
+      <span
+        className={cn(
+          "font-display tracking-tight",
+          size === "sm" ? "text-lg" : "text-xl",
+        )}
+        style={{ fontVariationSettings: '"SOFT" 60, "opsz" 144' }}
+      >
+        ocialella
+      </span>
+    </span>
+  );
+}
+
 function NavLinks(props: {
   pathname: string;
   mobile?: boolean;
@@ -58,13 +83,21 @@ function NavLinks(props: {
             href={item.href}
             onClick={() => props.onNavigate?.()}
             className={cn(
-              "flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium transition-colors hover:bg-[var(--color-bg-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-500)]",
-              active &&
-                "bg-[var(--color-bg-muted)] text-[var(--color-text)] border border-[var(--color-border)]",
-              !active && "text-[var(--color-text-muted)]",
+              "group flex min-h-11 items-center gap-2.5 rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose-500)]",
+              active
+                ? "bg-[var(--rose-50)] text-[var(--rose-700)] dark:bg-[var(--cream-800)] dark:text-[var(--rose-200)]"
+                : "text-[var(--color-text-muted)] hover:bg-[var(--color-bg-muted)] hover:text-[var(--color-text)]",
             )}
+            aria-current={active ? "page" : undefined}
           >
-            <Icon name={item.icon} className="h-5 w-5 shrink-0" />
+            <Icon
+              name={item.icon}
+              className={cn(
+                "h-5 w-5 shrink-0 transition-colors",
+                active && "text-[var(--color-accent)]",
+              )}
+              weight={active ? "fill" : "regular"}
+            />
             {item.label}
           </Link>
         );
@@ -79,10 +112,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-col lg:flex-row">
-      <aside className="hidden border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)] lg:block lg:w-56 lg:border-b-0 lg:border-r lg:min-h-screen lg:sticky lg:top-0 lg:self-start">
-        <div className="flex h-14 items-center gap-2 border-b border-[var(--color-border)] px-4">
-          <Icon name="Leaf" className="h-7 w-7 text-[var(--color-accent)]" />
-          <span className="font-semibold tracking-tight">Socialella</span>
+      <aside className="hidden border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)] lg:block lg:w-60 lg:border-b-0 lg:border-r lg:min-h-screen lg:sticky lg:top-0 lg:self-start">
+        <div className="flex h-16 items-center border-b border-[var(--color-border)] px-5">
+          <Link
+            href="/"
+            className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose-500)]"
+          >
+            <Wordmark />
+          </Link>
         </div>
         <div className="p-3">
           <NavLinks pathname={pathname} />
@@ -98,9 +135,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Icon name="Leaf" className="h-6 w-6 text-[var(--color-accent)]" />
-                Socialella
+              <DialogTitle asChild>
+                <Wordmark size="sm" />
               </DialogTitle>
             </DialogHeader>
             <NavLinks
@@ -110,12 +146,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
           </DialogContent>
         </Dialog>
-        <span className="font-semibold">Socialella</span>
+        <Wordmark size="sm" />
         <ThemeToggle />
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="hidden h-14 items-center justify-end gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-6 lg:flex">
+        <div className="hidden h-16 items-center justify-end gap-2 border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-6 lg:flex">
           <ThemeToggle />
           <Button
             variant="outline"
@@ -125,7 +161,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Sign out
           </Button>
         </div>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-10">{children}</main>
         <footer className="border-t border-[var(--color-border)] px-4 py-6 text-center text-xs text-[var(--color-text-muted)] lg:hidden">
           <Button
             variant="link"

@@ -13,7 +13,7 @@ export default async function QueuePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Queue</h1>
+        <h1 className="font-display text-4xl tracking-tight">Queue</h1>
         <p className="text-[var(--color-text-muted)]">
           Scaffold publishing — copy to platforms, then mark posted here.
         </p>
