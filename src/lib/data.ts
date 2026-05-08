@@ -50,12 +50,18 @@ export async function getPostFull(id: string) {
   return { post, variants, media };
 }
 
-export async function listPostsByStatuses(statuses: string[]) {
+export async function listPostsByStatuses(
+  statuses: string[],
+  opts: { appId?: string } = {},
+) {
   const db = getDb();
+  const where = opts.appId
+    ? and(inArray(posts.status, statuses), eq(posts.appId, opts.appId))
+    : inArray(posts.status, statuses);
   return db
     .select()
     .from(posts)
-    .where(inArray(posts.status, statuses))
+    .where(where)
     .orderBy(desc(posts.scheduledFor), desc(posts.updatedAt));
 }
 

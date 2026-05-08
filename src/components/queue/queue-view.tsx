@@ -299,7 +299,7 @@ function PostSection(props: {
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="font-display text-2xl tracking-tight">{props.title}</h2>
+        <h2 className="text-base font-semibold tracking-tight">{props.title}</h2>
         <p className="text-sm text-[var(--color-text-muted)]">
           {props.description}
         </p>

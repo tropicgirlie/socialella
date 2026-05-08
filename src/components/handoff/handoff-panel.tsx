@@ -32,28 +32,17 @@ const DEFAULT_PRIMARY: readonly PlatformId[] = [
   "tiktok",
 ] as const;
 
-const PLATFORM_TINT: Record<PlatformId, string> = {
-  x: "var(--accent-rose-soft)",
-  linkedin: "var(--accent-sky)",
-  instagram: "var(--accent-rose-soft)",
-  tiktok: "var(--accent-mint)",
-  threads: "var(--accent-peach)",
-  bluesky: "var(--accent-sky)",
-  mastodon: "var(--accent-peach)",
-  facebook: "var(--accent-sky)",
-  pinterest: "var(--accent-rose-soft)",
-};
-
-const PLATFORM_TINT_INK: Record<PlatformId, string> = {
-  x: "var(--accent-rose-soft-ink)",
-  linkedin: "var(--accent-sky-ink)",
-  instagram: "var(--accent-rose-soft-ink)",
-  tiktok: "var(--accent-mint-ink)",
-  threads: "var(--accent-peach-ink)",
-  bluesky: "var(--accent-sky-ink)",
-  mastodon: "var(--accent-peach-ink)",
-  facebook: "var(--accent-sky-ink)",
-  pinterest: "var(--accent-rose-soft-ink)",
+/** A small color dot per platform (used as the visual identifier on neutral pills). */
+const PLATFORM_DOT: Record<PlatformId, string> = {
+  x: "#0f1419",
+  linkedin: "#0a66c2",
+  instagram: "#e1306c",
+  tiktok: "#010101",
+  threads: "#000000",
+  bluesky: "#0085ff",
+  mastodon: "#6364ff",
+  facebook: "#1877f2",
+  pinterest: "#bd081c",
 };
 
 async function downloadCrossOrigin(url: string, filename: string) {
@@ -70,7 +59,6 @@ async function downloadCrossOrigin(url: string, filename: string) {
     a.remove();
     URL.revokeObjectURL(objectUrl);
   } catch {
-    // Cross-origin blocked download attribute — open in a new tab instead.
     window.open(url, "_blank", "noopener,noreferrer");
   }
 }
@@ -117,14 +105,12 @@ export function HandoffPanel({
         return;
       }
 
-      // 1. Always copy caption to the clipboard so paste-fallback always works.
       try {
         await navigator.clipboard.writeText(content);
       } catch {
-        // Clipboard API blocked — keep going, the user has the URL fallback.
+        // Clipboard blocked — fall through; URL fallback still helps.
       }
 
-      // 2. Download media for platforms that fundamentally need it.
       if (platformRequiresMedia(platform)) {
         if (media.length === 0) {
           toast.warning(
@@ -137,7 +123,6 @@ export function HandoffPanel({
         }
       }
 
-      // 3. Open the right composer / share URL.
       const method = getHandoff(platform, content, appUrl ?? undefined);
       let openedUrl: string | null = null;
       if (
@@ -180,7 +165,7 @@ export function HandoffPanel({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         {visiblePlatforms.map((platform) => {
           const handed = handedOffTo.has(platform);
           const busy = busyPlatform === platform;
@@ -192,20 +177,21 @@ export function HandoffPanel({
               disabled={busy}
               aria-busy={busy}
               className={cn(
-                "group inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rose-500)] disabled:opacity-60",
-                "border border-transparent",
+                "group inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--color-border)] bg-[var(--color-bg-elevated)] px-3 text-xs font-medium text-[var(--color-text)] transition-colors hover:border-[var(--indigo-300)] hover:bg-[var(--indigo-50)] hover:text-[var(--indigo-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--indigo-500)] disabled:opacity-60",
+                handed && "border-[var(--indigo-200)] bg-[var(--indigo-50)] text-[var(--indigo-700)]",
               )}
-              style={{
-                background: PLATFORM_TINT[platform],
-                color: PLATFORM_TINT_INK[platform],
-              }}
             >
+              <span
+                aria-hidden
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{ backgroundColor: PLATFORM_DOT[platform] }}
+              />
+              <span>{PLATFORM_LABELS[platform]}</span>
               {handed && (
-                <span aria-hidden className="text-sm leading-none">
+                <span aria-hidden className="text-[10px]">
                   ✓
                 </span>
               )}
-              <span>{PLATFORM_LABELS[platform]}</span>
               {busy && (
                 <span className="ml-0.5 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current" />
               )}
@@ -216,14 +202,14 @@ export function HandoffPanel({
           <button
             type="button"
             onClick={() => setShowAll(true)}
-            className="inline-flex h-9 items-center rounded-full border border-dashed border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-muted)]"
+            className="inline-flex h-8 items-center rounded-full border border-dashed border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text-muted)] hover:bg-[var(--color-bg-muted)]"
           >
             + More platforms
           </button>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"
           onClick={handleMarkPosted}

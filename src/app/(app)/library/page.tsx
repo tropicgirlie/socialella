@@ -16,7 +16,7 @@ export default async function LibraryPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-4xl tracking-tight">Library</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Library</h1>
         <p className="text-[var(--color-text-muted)]">
           Drafts, evergreen wins you already shipped, and archived posts.
         </p>

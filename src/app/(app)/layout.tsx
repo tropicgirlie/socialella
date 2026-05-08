@@ -1,4 +1,6 @@
-import { AppShell } from "@/components/app-shell";
+import { Suspense } from "react";
+import { AppShell, type ChannelApp } from "@/components/app-shell";
+import { listApps } from "@/lib/data";
 
 const REQUIRED_SERVER_ENV = [
   "DATABASE_URL",
@@ -9,7 +11,7 @@ const REQUIRED_SERVER_ENV = [
 function MissingEnvNotice({ missing }: { missing: string[] }) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-bg)] p-6 text-center text-[var(--color-text)]">
-      <h1 className="font-display text-3xl">Configuration missing</h1>
+      <h1 className="text-2xl font-semibold">Configuration missing</h1>
       <p className="max-w-md text-sm text-[var(--color-text-muted)]">
         This environment is missing:{" "}
         <span className="font-mono text-[var(--color-text)]">
@@ -24,7 +26,7 @@ function MissingEnvNotice({ missing }: { missing: string[] }) {
   );
 }
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -33,5 +35,17 @@ export default function AppLayout({
   if (missing.length > 0) {
     return <MissingEnvNotice missing={[...missing]} />;
   }
-  return <AppShell>{children}</AppShell>;
+
+  const appRows = await listApps();
+  const apps: ChannelApp[] = appRows.map((a) => ({
+    id: a.id,
+    name: a.name,
+    color: a.color,
+  }));
+
+  return (
+    <Suspense fallback={null}>
+      <AppShell apps={apps}>{children}</AppShell>
+    </Suspense>
+  );
 }

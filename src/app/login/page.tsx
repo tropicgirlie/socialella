@@ -12,44 +12,23 @@ export default function LoginPage() {
   const [pending, startTransition] = useTransition();
 
   return (
-    <div className="relative flex min-h-full flex-col items-center justify-center px-6 py-16 overflow-hidden">
-      {/* Soft sun-burst gradient behind the card — keeps the editorial warmth on auth */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, var(--accent-peach) 0%, transparent 60%), radial-gradient(circle at 80% 100%, var(--accent-rose-soft) 0%, transparent 50%)",
-        }}
-      />
-
-      <div className="w-full max-w-md">
-        <div className="mb-10 text-center">
-          <p
-            className="editorial-mark text-6xl text-[var(--color-accent)] leading-none"
-            aria-hidden
-          >
-            S
-          </p>
-          <h1
-            className="font-display mt-2 text-5xl tracking-tight text-[var(--color-text)]"
-            style={{ fontVariationSettings: '"SOFT" 80, "opsz" 144' }}
-          >
-            ocialella
+    <div className="flex min-h-full flex-col items-center justify-center bg-[var(--color-bg-muted)] px-4 py-16">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-[var(--indigo-600)] text-white">
+            <span className="text-base font-bold">S</span>
+          </span>
+          <h1 className="mt-4 text-xl font-semibold tracking-tight">
+            Socialella
           </h1>
-          <p className="mt-3 text-sm text-[var(--color-text-muted)]">
-            A calm space to plan, schedule, and ship — for solo founders.
+          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+            Sign in to your scheduler.
           </p>
         </div>
 
-        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-8 shadow-[var(--shadow-md)]">
-          <h2 className="font-display text-2xl">Welcome back</h2>
-          <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-            Sign in with your password to manage queues and drafts.
-          </p>
-
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-6 shadow-[var(--shadow-sm)]">
           <form
-            className="mt-6 space-y-5"
+            className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
               setError(null);
@@ -67,7 +46,7 @@ export default function LoginPage() {
               });
             }}
           >
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
@@ -78,7 +57,7 @@ export default function LoginPage() {
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Your solo password"
+                placeholder="Your password"
               />
             </div>
             {error && (
@@ -96,14 +75,10 @@ export default function LoginPage() {
               disabled={pending}
               aria-busy={pending}
             >
-              {pending ? "Signing in…" : "Continue"}
+              {pending ? "Signing in…" : "Sign in"}
             </Button>
           </form>
         </div>
-
-        <p className="mt-6 text-center text-xs text-[var(--color-text-muted)]">
-          Built for one founder, one keyboard, one rhythm.
-        </p>
       </div>
     </div>
   );

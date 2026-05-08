@@ -21,7 +21,7 @@ export default async function ComposePage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-4xl tracking-tight">Compose</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Compose</h1>
         <p className="text-[var(--color-text-muted)]">
           Draft once, tune per platform, keep your voice intact.
         </p>
