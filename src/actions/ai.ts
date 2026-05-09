@@ -67,6 +67,67 @@ ${base}`;
   }
 }
 
+/**
+ * Rewrite a post to strip self-promotion biases (hedges, apologies, diminishers,
+ * imposter framing, permission-seeking) while preserving voice and facts.
+ *
+ * This is the AI counterpart to the local Voice Lens detector — when the user
+ * accepts the suggestion, the rewrite goes through here.
+ */
+export async function aiRewriteForVoice(input: {
+  base: string;
+}): Promise<RewriteResult> {
+  const hasGateway = Boolean(process.env.AI_GATEWAY_API_KEY);
+  const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+  if (!hasGateway && !hasOpenAI) {
+    return {
+      skipped: true,
+      reason:
+        "Add AI_GATEWAY_API_KEY (or OPENAI_API_KEY) to enable AI rewrites.",
+    };
+  }
+  const base = input.base?.trim();
+  if (!base) {
+    return {
+      skipped: true,
+      reason: "Write a draft first, then I'll rewrite it.",
+    };
+  }
+
+  const prompt = `You are helping a woman founder self-promote without paying the "self-promotion penalty" — a documented bias where women are judged more harshly than men for the same direct framing.
+
+Rewrite the post below to remove these patterns while keeping the author's voice, intent, and facts intact:
+- Drop hedges ("just", "kind of", "I think", "maybe").
+- Remove apologies for sharing the work.
+- Replace diminishers like "little app" or "tiny tool" with the noun alone.
+- Cut imposter framing ("I'm no expert", "this might be obvious", "nobody asked").
+- Skip permission-seeking ("if that's okay", "mind if I").
+
+Constraints:
+- Match the original length within 20%.
+- Do not add hashtags unless the original has them.
+- Output only the post text. No quotes, no preamble, no explanation.
+
+Original:
+${base}`;
+
+  try {
+    const { text } = await generateText({
+      model: REWRITE_MODEL,
+      prompt,
+    });
+    return { ok: true, text: text.trim() };
+  } catch (err) {
+    console.error("[aiRewriteForVoice] failed", err);
+    return {
+      error:
+        err instanceof Error
+          ? err.message
+          : "Something went wrong calling the AI gateway.",
+    };
+  }
+}
+
 function platformCharLimit(p: PlatformId): number {
   switch (p) {
     case "x":

@@ -203,10 +203,10 @@ function HeroProductPreview() {
     { name: "Settings", icon: "Gear" as IconName },
   ];
   const platforms = [
-    { name: "X (Twitter)", icon: "XLogo" as IconName, active: true },
+    { name: "X", icon: "XLogo" as IconName, active: true },
     { name: "LinkedIn", icon: "LinkedinLogo" as IconName },
-    { name: "Instagram", icon: "Sparkle" as IconName },
-    { name: "TikTok", icon: "Waveform" as IconName },
+    { name: "Instagram", icon: "InstagramLogo" as IconName },
+    { name: "TikTok", icon: "TiktokLogo" as IconName },
   ];
 
   return (
@@ -292,12 +292,12 @@ function HeroProductPreview() {
             One step, tailored for every platform
           </p>
 
-          <div className="mt-3 flex items-center gap-1.5 border-b border-[var(--gray-150)] pb-2">
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-b border-[var(--gray-150)] pb-2">
             {platforms.map((p) => (
               <span
                 key={p.name}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium",
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-medium whitespace-nowrap",
                   p.active
                     ? "border-[var(--violet-200)] bg-[var(--violet-50)] text-[var(--violet-700)]"
                     : "border-[var(--gray-200)] bg-white text-[var(--gray-600)]",
@@ -307,7 +307,7 @@ function HeroProductPreview() {
                 {p.name}
               </span>
             ))}
-            <span className="ml-auto text-[10px] font-medium text-[var(--violet-600)]">
+            <span className="text-[10px] font-medium text-[var(--violet-600)] whitespace-nowrap">
               + More
             </span>
           </div>

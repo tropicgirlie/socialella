@@ -9,6 +9,7 @@ import { PLATFORMS, type PlatformId } from "@/lib/constants";
 import type { TonePreset } from "@/lib/constants";
 import { analyzeConfidence } from "@/lib/confidence";
 import { checklistLabels, defaultChecklist } from "@/lib/founder-checklist";
+import { VoiceLensCard } from "@/components/compose/voice-lens-card";
 import { defaultToneForPlatform, applyTonePreset } from "@/lib/tone";
 import {
   savePost,
@@ -1419,6 +1420,10 @@ export function ComposeStudio(props: {
             base={baseContent}
             onScan={handleScanAgain}
             pending={pending}
+          />
+          <VoiceLensCard
+            base={baseContent}
+            onApplyRewrite={(next) => updateBase(next)}
           />
           <AIIdeasCard onApply={handleApplyIdea} />
           <GotThisCard />
