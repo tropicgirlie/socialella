@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { signInAction } from "@/actions/auth";
+import { useActionState, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { signInAction, type SignInState } from "@/actions/auth";
 import { Icon } from "@/components/Icon";
 
 type Props = {
@@ -9,32 +10,41 @@ type Props = {
   initialError?: string;
 };
 
-export function LoginForm({ next, initialError }: Props) {
-  const [email, setEmail] = useState("admin@admin.com");
-  const [password, setPassword] = useState("password123");
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(initialError ?? null);
-  const [pending, startTransition] = useTransition();
+const INITIAL: SignInState = {};
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    startTransition(async () => {
-      const res = await signInAction({ email, password, redirectTo: next });
-      if (res?.error) setError(res.error);
-    });
-  }
+function SubmitButton() {
+  const { pending } = useFormStatus();
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--violet-600)] text-sm font-semibold text-white shadow-[0_8px_24px_-12px_rgba(124,58,237,0.7)] transition-colors hover:bg-[var(--violet-700)] disabled:opacity-60"
+    >
+      {pending ? "Signing in…" : "Sign in"}
+      {!pending && <Icon name="ArrowRight" weight="bold" className="h-4 w-4" />}
+    </button>
+  );
+}
+
+export function LoginForm({ next, initialError }: Props) {
+  const [state, formAction] = useActionState<SignInState, FormData>(
+    signInAction,
+    initialError ? { error: initialError } : INITIAL,
+  );
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+    <form action={formAction} className="space-y-4" noValidate>
+      {next && <input type="hidden" name="next" value={next} />}
+
       <label className="block">
         <span className="text-xs font-semibold text-[var(--gray-700)]">
           Email
         </span>
         <input
+          name="email"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          defaultValue="admin@admin.com"
           autoComplete="email"
           required
           placeholder="you@example.com"
@@ -54,9 +64,9 @@ export function LoginForm({ next, initialError }: Props) {
           </button>
         </span>
         <input
+          name="password"
           type={showPassword ? "text" : "password"}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          defaultValue="password123"
           autoComplete="current-password"
           required
           placeholder="••••••••"
@@ -64,24 +74,17 @@ export function LoginForm({ next, initialError }: Props) {
         />
       </label>
 
-      {error && (
+      {state.error && (
         <p
           role="alert"
           className="flex items-start gap-1.5 rounded-[var(--radius-md)] border border-[var(--pink-200)] bg-[var(--pink-50)] px-3 py-2 text-xs text-[var(--pink-700)]"
         >
           <Icon name="Bell" weight="fill" className="mt-0.5 h-3 w-3 shrink-0" />
-          {error}
+          {state.error}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--violet-600)] text-sm font-semibold text-white shadow-[0_8px_24px_-12px_rgba(124,58,237,0.7)] transition-colors hover:bg-[var(--violet-700)] disabled:opacity-60"
-      >
-        {pending ? "Signing in…" : "Sign in"}
-        {!pending && <Icon name="ArrowRight" weight="bold" className="h-4 w-4" />}
-      </button>
+      <SubmitButton />
     </form>
   );
 }

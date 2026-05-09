@@ -254,16 +254,16 @@ export function TopBar({ apps }: { apps: ChannelApp[] }) {
               Marketing home
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => {
-              startTransition(() => {
-                void signOutAction();
-              });
-            }}
-            className="gap-2 text-[var(--pink-600)] focus:text-[var(--pink-700)]"
-          >
-            <Icon name="ArrowRight" className="h-3.5 w-3.5" />
-            Sign out
+          <DropdownMenuItem asChild>
+            <form action={signOutAction} className="block">
+              <button
+                type="submit"
+                className="flex w-full items-center gap-2 text-left text-[var(--pink-600)] focus:text-[var(--pink-700)]"
+              >
+                <Icon name="ArrowRight" className="h-3.5 w-3.5" />
+                Sign out
+              </button>
+            </form>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
