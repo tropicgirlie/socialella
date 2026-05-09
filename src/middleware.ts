@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
+import {
+  SESSION_COOKIE_NAME,
+  verifySessionToken,
+} from "@/lib/session-token";
 
 /** Routes that require authentication. */
 const PROTECTED_PREFIXES = [
@@ -20,12 +23,16 @@ const PROTECTED_PREFIXES = [
 /** Routes that should bounce signed-in users back to /dashboard. */
 const PUBLIC_AUTH_ROUTES = ["/login"];
 
-export default function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const email = verifySessionToken(token);
+  const email = await verifySessionToken(token);
 
-  if (PUBLIC_AUTH_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+  if (
+    PUBLIC_AUTH_ROUTES.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`),
+    )
+  ) {
     if (email) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
@@ -33,7 +40,9 @@ export default function middleware(req: NextRequest) {
   }
 
   if (
-    PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+    PROTECTED_PREFIXES.some(
+      (p) => pathname === p || pathname.startsWith(`${p}/`),
+    )
   ) {
     if (email) return NextResponse.next();
     const next = encodeURIComponent(pathname + req.nextUrl.search);
