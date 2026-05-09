@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { QueueView } from "@/components/queue/queue-view";
 import { listApps, listPostsByStatuses } from "@/lib/data";
+import { getBlueskyConnection } from "@/actions/connections";
 import { Icon } from "@/components/Icon";
 
 export const dynamic = "force-dynamic";
@@ -28,11 +29,12 @@ export default async function QueuePage({
           ? "scheduled"
           : undefined;
 
-  const [scheduled, ready, posted, apps] = await Promise.all([
+  const [scheduled, ready, posted, apps, bluesky] = await Promise.all([
     listPostsByStatuses(["scheduled"], { appId: appFilter }),
     listPostsByStatuses(["ready_to_post"], { appId: appFilter }),
     listPostsByStatuses(["posted"], { appId: appFilter }),
     listApps(),
+    getBlueskyConnection(),
   ]);
 
   const appNames = Object.fromEntries(apps.map((a) => [a.id, a.name]));
@@ -93,6 +95,7 @@ export default async function QueuePage({
         appColors={appColors}
         highlightId={highlightId}
         defaultTab={defaultTab}
+        blueskyConnected={Boolean(bluesky)}
       />
     </div>
   );

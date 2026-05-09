@@ -18,6 +18,7 @@ import {
   platformRequiresMedia,
 } from "@/lib/platform-links";
 import { prepareHandoff } from "@/actions/handoff";
+import { publishPostToBluesky } from "@/actions/connections";
 import { checklistLabels } from "@/lib/founder-checklist";
 import { Icon, type IconName } from "@/components/Icon";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ type WalkthroughPost = {
 
 type Props = {
   items: WalkthroughPost[];
+  blueskyConnected?: boolean;
 };
 
 const VISIBLE_PLATFORMS: PlatformId[] = [
@@ -80,7 +82,10 @@ async function downloadMedia(url: string, fallbackName: string) {
   }
 }
 
-export function HandoffWalkthrough({ items }: Props) {
+export function HandoffWalkthrough({
+  items,
+  blueskyConnected = false,
+}: Props) {
   const router = useRouter();
   const [index, setIndex] = useState(0);
   const [pendingMark, startMarkTransition] = useTransition();
@@ -157,6 +162,33 @@ export function HandoffWalkthrough({ items }: Props) {
     if (!item) return;
     setBusyPlatform(platform);
     try {
+      // Bluesky is the one platform we can post to directly. If a connection
+      // exists, do a real publish — otherwise fall through to the manual
+      // hand-off so the user is never blocked.
+      if (platform === "bluesky" && blueskyConnected) {
+        const res = await publishPostToBluesky(item.post.id);
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
+        setHandedOff((prev) => {
+          const next = { ...prev };
+          const set = new Set(next[item.post.id] ?? []);
+          set.add(platform);
+          next[item.post.id] = set;
+          return next;
+        });
+        toast.success("Posted to Bluesky.");
+        // The post itself is now in `posted` status and will drop out of the
+        // ready list on the next refresh; advance to the next ready post.
+        if (safeIndex < items.length - 1) {
+          setIndex(safeIndex + 1);
+        } else {
+          router.refresh();
+        }
+        return;
+      }
+
       const res = await prepareHandoff(item.post.id, platform);
       if (!res.ok) {
         toast.error(res.error);
@@ -321,6 +353,7 @@ export function HandoffWalkthrough({ items }: Props) {
                 const text = variant?.content || item.post.baseContent;
                 const isHanded = handed.has(p);
                 const busy = busyPlatform === p;
+                const isDirectPublish = p === "bluesky" && blueskyConnected;
                 return (
                   <li
                     key={p}
@@ -372,7 +405,15 @@ export function HandoffWalkthrough({ items }: Props) {
                           className="h-3 w-3"
                         />
                       )}
-                      {busy ? "Opening…" : isHanded ? "Done" : "Hand off"}
+                      {busy
+                        ? isDirectPublish
+                          ? "Posting…"
+                          : "Opening…"
+                        : isHanded
+                          ? "Done"
+                          : isDirectPublish
+                            ? "Post now"
+                            : "Hand off"}
                     </button>
                   </li>
                 );

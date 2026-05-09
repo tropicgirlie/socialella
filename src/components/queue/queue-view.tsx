@@ -23,6 +23,7 @@ import { format, formatDistanceToNow, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import type { posts } from "@/db/schema";
 import { reschedulePost } from "@/actions/posts";
+import { publishPostToBluesky } from "@/actions/connections";
 import { HandoffPanel } from "@/components/handoff/handoff-panel";
 import { Icon, type IconName } from "@/components/Icon";
 import { Input } from "@/components/ui/input";
@@ -38,6 +39,7 @@ type Props = {
   appColors: Record<string, string>;
   highlightId?: string | null;
   defaultTab?: TabId;
+  blueskyConnected?: boolean;
 };
 
 type TabId = "ready" | "scheduled" | "posted";
@@ -56,6 +58,7 @@ export function QueueView({
   appColors,
   highlightId,
   defaultTab,
+  blueskyConnected = false,
 }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<TabId>(() =>
@@ -161,6 +164,7 @@ export function QueueView({
               tab={tab}
               isHighlighted={post.id === highlightId}
               onRescheduled={() => router.refresh()}
+              blueskyConnected={blueskyConnected}
               ref={post.id === highlightId ? highlightRef : null}
             />
           ))
@@ -216,6 +220,7 @@ function PostCard({
   tab,
   isHighlighted,
   onRescheduled,
+  blueskyConnected,
   ref,
 }: {
   post: PostRow;
@@ -224,6 +229,7 @@ function PostCard({
   tab: TabId;
   isHighlighted: boolean;
   onRescheduled: () => void;
+  blueskyConnected: boolean;
   ref?: Ref<HTMLDivElement>;
 }) {
   const [pending, startTransition] = useTransition();
@@ -361,7 +367,17 @@ function PostCard({
         )}
       </div>
 
-      {tab === "ready" && <HandoffPanel postId={post.id} />}
+      {tab === "ready" && (
+        <div className="flex flex-col gap-2">
+          {blueskyConnected && (
+            <BlueskyPublishButton
+              postId={post.id}
+              onPublished={onRescheduled}
+            />
+          )}
+          <HandoffPanel postId={post.id} />
+        </div>
+      )}
 
       <footer className="flex items-center justify-between border-t border-[var(--gray-150)] pt-3 text-[11px]">
         <Link
@@ -382,5 +398,50 @@ function PostCard({
         )}
       </footer>
     </article>
+  );
+}
+
+/**
+ * One-click direct publish to Bluesky for a ready post. We keep this
+ * narrow: optimistic disable while pending, toast outcome, refresh queue.
+ * Bluesky is the only platform where we own the publish — everything else
+ * still flows through the hand-off walkthrough.
+ */
+function BlueskyPublishButton({
+  postId,
+  onPublished,
+}: {
+  postId: string;
+  onPublished: () => void;
+}) {
+  const [pending, startTransition] = useTransition();
+
+  function publish() {
+    startTransition(async () => {
+      const res = await publishPostToBluesky(postId);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Posted to Bluesky.");
+      onPublished();
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={publish}
+      disabled={pending}
+      className={cn(
+        "inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] px-3 py-2 text-xs font-semibold transition-colors",
+        pending
+          ? "cursor-wait bg-[var(--violet-100)] text-[var(--violet-700)]"
+          : "bg-[var(--violet-600)] text-white hover:bg-[var(--violet-700)]",
+      )}
+    >
+      <Icon name="PaperPlaneTilt" className="h-3.5 w-3.5" />
+      {pending ? "Posting…" : "Post to Bluesky now"}
+    </button>
   );
 }

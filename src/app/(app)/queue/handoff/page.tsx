@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getDb } from "@/db";
 import { apps, postMedia, postVariants } from "@/db/schema";
 import { listHandoffCandidates } from "@/lib/data";
+import { getBlueskyConnection } from "@/actions/connections";
 import { HandoffWalkthrough } from "@/components/handoff/handoff-walkthrough";
 import { Icon } from "@/components/Icon";
 
@@ -11,12 +12,14 @@ export default async function HandoffPage() {
   const db = getDb();
 
   // Pull everything in one batch — small datasets, single-user app.
-  const [readyPosts, allApps, allVariants, allMedia] = await Promise.all([
-    listHandoffCandidates(12),
-    db.select().from(apps),
-    db.select().from(postVariants),
-    db.select().from(postMedia),
-  ]);
+  const [readyPosts, allApps, allVariants, allMedia, bluesky] =
+    await Promise.all([
+      listHandoffCandidates(12),
+      db.select().from(apps),
+      db.select().from(postVariants),
+      db.select().from(postMedia),
+      getBlueskyConnection(),
+    ]);
 
   const appById = new Map(allApps.map((a) => [a.id, a]));
   const variantsByPost = new Map<string, typeof allVariants>();
@@ -71,7 +74,7 @@ export default async function HandoffPage() {
         </Link>
       </header>
 
-      <HandoffWalkthrough items={items} />
+      <HandoffWalkthrough items={items} blueskyConnected={Boolean(bluesky)} />
     </div>
   );
 }
