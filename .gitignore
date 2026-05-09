@@ -10,6 +10,10 @@
 !.yarn/releases
 !.yarn/versions
 
+# pnpm (project uses npm — pnpm artifacts are accidental)
+.pnpm-store/
+pnpm-lock.yaml
+
 # testing
 /coverage
 
@@ -39,3 +43,4 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.env*.local

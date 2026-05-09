@@ -27,6 +27,24 @@
   --indigo-800: #3730a3;
   --indigo-900: #312e81;
 
+  /* Violet — landing page accent (warmer, more "indie founder" feel) */
+  --violet-50: #f5f3ff;
+  --violet-100: #ede9fe;
+  --violet-200: #ddd6fe;
+  --violet-300: #c4b5fd;
+  --violet-400: #a78bfa;
+  --violet-500: #8b5cf6;
+  --violet-600: #7c3aed;
+  --violet-700: #6d28d9;
+
+  /* Pink — used for badges and the "made for women" accent */
+  --pink-50: #fdf2f8;
+  --pink-100: #fce7f3;
+  --pink-200: #fbcfe8;
+  --pink-400: #f472b6;
+  --pink-500: #ec4899;
+  --pink-600: #db2777;
+
   /* Status */
   --danger-500: #ef4444;
   --danger-600: #dc2626;
@@ -34,12 +52,14 @@
   --success-600: #15803d;
   --warning-500: #f59e0b;
 
-  /* Semantic — light only (dark mode deferred until light UI is stable) */
-  --color-bg: #ffffff;
+  /* Semantic — light only (dark mode deferred until light UI is stable).
+     Editorial canvas: slightly off-white background with elevated white cards
+     for a calm, premium feel. Neutrals trend toward gray-700 for body text. */
+  --color-bg: #fafafa;
   --color-bg-elevated: #ffffff;
   --color-bg-muted: var(--gray-50);
   --color-bg-subtle: var(--gray-100);
-  --color-border: var(--gray-200);
+  --color-border: #ececef;
   --color-border-strong: var(--gray-300);
   --color-text: var(--gray-900);
   --color-text-muted: var(--gray-500);

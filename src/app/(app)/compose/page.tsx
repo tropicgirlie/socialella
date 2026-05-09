@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ComposeForm } from "@/components/compose/compose-form";
+import { ComposeStudio } from "@/components/compose/compose-studio";
 import { getPostFull, listApps, listCampaignsForApp } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
@@ -19,20 +19,18 @@ export default async function ComposePage({
   const initial = sp.id ? await getPostFull(sp.id) : null;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Compose</h1>
-        <p className="text-[var(--color-text-muted)]">
-          Draft once, tune per platform, keep your voice intact.
+    <Suspense
+      fallback={
+        <p className="text-sm text-[var(--gray-500)]">
+          Loading Compose Studio…
         </p>
-      </div>
-      <Suspense fallback={<p className="text-sm text-[var(--color-text-muted)]">Loading composer…</p>}>
-        <ComposeForm
-          apps={apps}
-          campaignsByApp={campaignsByApp}
-          initial={initial}
-        />
-      </Suspense>
-    </div>
+      }
+    >
+      <ComposeStudio
+        apps={apps}
+        campaignsByApp={campaignsByApp}
+        initial={initial}
+      />
+    </Suspense>
   );
 }

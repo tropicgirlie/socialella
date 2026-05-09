@@ -116,6 +116,25 @@ export const safetyClips = pgTable("safety_clips", {
   postId: uuid("post_id").references(() => posts.id, { onDelete: "set null" }),
 });
 
+/**
+ * Per-platform account connections. For Bluesky this stores the user's
+ * `identifier` (handle) and an app password ref (we hold the value in
+ * `secret` for the solo-user MVP, with a clear migration path to a
+ * managed secret store later).
+ */
+export const accountConnections = pgTable("account_connections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  platform: text("platform").notNull(), // matches PlatformId
+  identifier: text("identifier").notNull(),
+  secret: text("secret"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+  status: text("status").notNull().default("connected"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+});
+
 export const userSettings = pgTable("user_settings", {
   id: integer("id").primaryKey().default(1),
   digestEnabled: boolean("digest_enabled").notNull().default(false),

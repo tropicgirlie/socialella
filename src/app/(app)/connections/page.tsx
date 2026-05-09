@@ -7,8 +7,10 @@ import {
   TIER_LABEL,
   type ConnectionTier,
 } from "@/lib/connection-status";
+import { getBlueskyConnection } from "@/actions/connections";
+import { BlueskyConnectCard } from "@/components/connections/bluesky-connect-card";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
 const TIER_CLASS: Record<ConnectionTier, string> = {
   "free-credentials":
@@ -28,10 +30,11 @@ const TIER_ORDER: Record<ConnectionTier, number> = {
   "no-public-api": 3,
 };
 
-export default function ConnectionsPage() {
+export default async function ConnectionsPage() {
   const sorted = CONNECTION_INFO.slice().sort(
     (a, b) => TIER_ORDER[a.upgradeTier] - TIER_ORDER[b.upgradeTier],
   );
+  const blueskyConnection = await getBlueskyConnection();
 
   return (
     <div className="space-y-8">
@@ -42,6 +45,8 @@ export default function ConnectionsPage() {
           upgrade costs.
         </p>
       </header>
+
+      <BlueskyConnectCard initial={blueskyConnection} />
 
       <Card>
         <CardContent className="grid gap-4 p-6 md:grid-cols-3">

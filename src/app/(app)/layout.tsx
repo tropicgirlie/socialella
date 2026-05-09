@@ -2,11 +2,7 @@ import { Suspense } from "react";
 import { AppShell, type ChannelApp } from "@/components/app-shell";
 import { listApps } from "@/lib/data";
 
-const REQUIRED_SERVER_ENV = [
-  "DATABASE_URL",
-  "AUTH_SECRET",
-  "APP_PASSWORD_HASH",
-] as const;
+const REQUIRED_SERVER_ENV = ["DATABASE_URL"] as const;
 
 function MissingEnvNotice({ missing }: { missing: string[] }) {
   return (

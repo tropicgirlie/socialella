@@ -1,14 +1,8 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
-import { auth } from "@/auth";
 import { listSafetyClips } from "@/lib/data";
 
 export async function GET() {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const clips = await listSafetyClips();
   const zip = new JSZip();
 

@@ -4,9 +4,14 @@ import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/db";
-import { PLATFORMS, type PlatformId } from "@/lib/constants";
+import {
+  PLATFORMS,
+  type EnergyTag,
+  type PlatformId,
+} from "@/lib/constants";
 import { applyTonePreset, defaultToneForPlatform } from "@/lib/tone";
 import { defaultChecklist } from "@/lib/founder-checklist";
+import { suggestNextSlot, describeSlotReason } from "@/lib/scheduling";
 import { posts, postVariants } from "@/db/schema";
 
 const platformSchema = z
@@ -118,6 +123,23 @@ export async function schedulePost(postId: string, isoDateTime: string) {
 
 export async function reschedulePost(postId: string, isoDateTime: string) {
   return schedulePost(postId, isoDateTime);
+}
+
+/**
+ * Suggest a schedule slot for a given energy tag.
+ * Used by the Compose Studio bottom Schedule card.
+ */
+export async function suggestSlotForEnergy(
+  energyTag: EnergyTag | null,
+): Promise<{
+  iso: string;
+  hint: string;
+}> {
+  const result = await suggestNextSlot(energyTag);
+  return {
+    iso: result.iso,
+    hint: describeSlotReason(result.reason),
+  };
 }
 
 export async function markPosted(postId: string) {

@@ -1,385 +1,386 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import type { Ref } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+
+function pickInitialTab(
+  highlightId: string | null | undefined,
+  defaultTab: TabId | undefined,
+  scheduled: PostRow[],
+  ready: PostRow[],
+  posted: PostRow[],
+): TabId {
+  if (highlightId) {
+    if (scheduled.some((p) => p.id === highlightId)) return "scheduled";
+    if (ready.some((p) => p.id === highlightId)) return "ready";
+    if (posted.some((p) => p.id === highlightId)) return "posted";
+  }
+  return defaultTab ?? "ready";
+}
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  type DropResult,
-} from "@hello-pangea/dnd";
-import {
-  addDays,
-  eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
-  format,
-  isSameDay,
-  isSameMonth,
-  startOfMonth,
-  startOfWeek,
-} from "date-fns";
+import { format, formatDistanceToNow, isSameDay } from "date-fns";
 import { toast } from "sonner";
 import type { posts } from "@/db/schema";
 import { reschedulePost } from "@/actions/posts";
-import { mergeKeepLocalTime } from "@/lib/date-utils";
-import { PLATFORM_LABELS, PLATFORMS, type PlatformId } from "@/lib/constants";
-import { getComposerDeepLink } from "@/lib/platform-links";
 import { HandoffPanel } from "@/components/handoff/handoff-panel";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Icon, type IconName } from "@/components/Icon";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 type PostRow = typeof posts.$inferSelect;
 
-export function QueueView(props: {
+type Props = {
   scheduled: PostRow[];
   ready: PostRow[];
   posted: PostRow[];
   appNames: Record<string, string>;
-}) {
+  appColors: Record<string, string>;
+  highlightId?: string | null;
+  defaultTab?: TabId;
+};
+
+type TabId = "ready" | "scheduled" | "posted";
+
+const TABS: { id: TabId; label: string; icon: IconName }[] = [
+  { id: "ready", label: "Ready", icon: "ShieldCheck" },
+  { id: "scheduled", label: "Scheduled", icon: "CalendarBlank" },
+  { id: "posted", label: "Posted", icon: "CheckCircle" },
+];
+
+export function QueueView({
+  scheduled,
+  ready,
+  posted,
+  appNames,
+  appColors,
+  highlightId,
+  defaultTab,
+}: Props) {
   const router = useRouter();
-  const scheduled = props.scheduled;
-  const ready = props.ready;
-  const posted = props.posted;
-  const [monthCursor, setMonthCursor] = useState(() => new Date());
+  const [tab, setTab] = useState<TabId>(() =>
+    pickInitialTab(highlightId, defaultTab, scheduled, ready, posted),
+  );
+  const highlightRef = useRef<HTMLDivElement | null>(null);
+
+  // Scroll the highlighted card into view after it renders.
+  useEffect(() => {
+    if (!highlightId) return;
+    const t = setTimeout(() => {
+      highlightRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 80);
+    return () => clearTimeout(t);
+  }, [highlightId, tab]);
+
+  const lists: Record<TabId, PostRow[]> = useMemo(() => {
+    return {
+      ready,
+      scheduled: [...scheduled].sort((a, b) => {
+        const at = a.scheduledFor
+          ? new Date(a.scheduledFor).getTime()
+          : Number.POSITIVE_INFINITY;
+        const bt = b.scheduledFor
+          ? new Date(b.scheduledFor).getTime()
+          : Number.POSITIVE_INFINITY;
+        return at - bt;
+      }),
+      posted,
+    };
+  }, [ready, scheduled, posted]);
+
+  const counts: Record<TabId, number> = {
+    ready: ready.length,
+    scheduled: scheduled.length,
+    posted: posted.length,
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        {TABS.map((t) => {
+          const isActive = t.id === tab;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              className={cn(
+                "inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-md)] border px-3 text-xs font-medium transition-colors",
+                isActive
+                  ? "border-[var(--gray-900)] bg-white text-[var(--gray-900)] shadow-sm"
+                  : "border-[var(--gray-200)] bg-white text-[var(--gray-600)] hover:border-[var(--gray-300)]",
+              )}
+            >
+              <Icon
+                name={t.icon}
+                weight={isActive ? "fill" : "regular"}
+                className={cn(
+                  "h-3.5 w-3.5",
+                  isActive ? "text-[var(--violet-600)]" : "text-[var(--gray-400)]",
+                )}
+              />
+              {t.label}
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
+                  isActive
+                    ? "bg-[var(--violet-100)] text-[var(--violet-700)]"
+                    : "bg-[var(--gray-100)] text-[var(--gray-600)]",
+                )}
+              >
+                {counts[t.id]}
+              </span>
+            </button>
+          );
+        })}
+
+        {ready.length > 0 && (
+          <Link
+            href="/queue/handoff"
+            className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--violet-600)] px-3 text-xs font-semibold text-white shadow-[0_8px_24px_-12px_rgba(124,58,237,0.6)] transition-colors hover:bg-[var(--violet-700)]"
+          >
+            <Icon name="Sparkle" weight="fill" className="h-3.5 w-3.5" />
+            Run hand-off mode
+          </Link>
+        )}
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {lists[tab].length === 0 ? (
+          <EmptyState tab={tab} />
+        ) : (
+          lists[tab].map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              appName={appNames[post.appId] ?? "App"}
+              appColor={appColors[post.appId] ?? "var(--gray-400)"}
+              tab={tab}
+              isHighlighted={post.id === highlightId}
+              onRescheduled={() => router.refresh()}
+              ref={post.id === highlightId ? highlightRef : null}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ tab }: { tab: TabId }) {
+  const copy: Record<TabId, { title: string; body: string; cta: string; href: string }> = {
+    ready: {
+      title: "No posts ready to hand off",
+      body: "Promote scheduled posts to ready when they're approved.",
+      cta: "View scheduled",
+      href: "/queue?status=scheduled",
+    },
+    scheduled: {
+      title: "Your queue is clear",
+      body: "Compose something to keep momentum going.",
+      cta: "Compose",
+      href: "/compose",
+    },
+    posted: {
+      title: "No posts shipped yet",
+      body: "Once you mark posts posted they'll appear here.",
+      cta: "View ready",
+      href: "/queue?status=ready",
+    },
+  };
+  const c = copy[tab];
+  return (
+    <div className="md:col-span-2 flex flex-col items-center gap-2 rounded-[var(--radius-lg)] border border-dashed border-[var(--gray-300)] bg-white px-6 py-12 text-center">
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--gray-100)] text-[var(--gray-400)]">
+        <Icon name="Tray" className="h-4 w-4" />
+      </span>
+      <p className="text-sm font-semibold text-[var(--gray-900)]">{c.title}</p>
+      <p className="max-w-sm text-xs text-[var(--gray-600)]">{c.body}</p>
+      <Link
+        href={c.href}
+        className="mt-2 inline-flex h-8 items-center rounded-[var(--radius-md)] border border-[var(--gray-200)] bg-white px-3 text-xs font-semibold text-[var(--gray-700)] hover:bg-[var(--gray-50)]"
+      >
+        {c.cta}
+      </Link>
+    </div>
+  );
+}
+
+function PostCard({
+  post,
+  appName,
+  appColor,
+  tab,
+  isHighlighted,
+  onRescheduled,
+  ref,
+}: {
+  post: PostRow;
+  appName: string;
+  appColor: string;
+  tab: TabId;
+  isHighlighted: boolean;
+  onRescheduled: () => void;
+  ref?: Ref<HTMLDivElement>;
+}) {
   const [pending, startTransition] = useTransition();
+  const [editingTime, setEditingTime] = useState(false);
+  const [dt, setDt] = useState<string>(() =>
+    post.scheduledFor
+      ? format(new Date(post.scheduledFor), "yyyy-MM-dd'T'HH:mm")
+      : "",
+  );
 
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-  const weekDays = eachDayOfInterval({
-    start: weekStart,
-    end: addDays(weekStart, 6),
-  });
-
-  const scheduledById = useMemo(() => {
-    const m = new Map<string, PostRow>();
-    for (const p of scheduled) m.set(p.id, p);
-    return m;
-  }, [scheduled]);
-
-  function postsForDay(day: Date) {
-    return scheduled.filter(
-      (p) => p.scheduledFor && isSameDay(new Date(p.scheduledFor), day),
-    );
-  }
-
-  function onDragEnd(result: DropResult) {
-    const { destination, draggableId, source } = result;
-    if (!destination) return;
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-    const post = scheduledById.get(draggableId);
-    if (!post?.scheduledFor) return;
-    const targetDay = weekDays.find(
-      (_, i) => `day-${i}` === destination.droppableId,
-    );
-    if (!targetDay) return;
-    const nextWhen = mergeKeepLocalTime(post.scheduledFor, targetDay);
+  function saveTime() {
+    if (!dt) return;
     startTransition(async () => {
-      const res = await reschedulePost(post.id, nextWhen.toISOString());
+      const res = await reschedulePost(post.id, new Date(dt).toISOString());
       if ("error" in res && res.error) {
         toast.error(String(res.error));
         return;
       }
       toast.success("Rescheduled.");
-      router.refresh();
+      setEditingTime(false);
+      onRescheduled();
     });
   }
 
-  const monthStart = startOfMonth(monthCursor);
-  const monthEnd = endOfMonth(monthCursor);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  const monthGrid = eachDayOfInterval({
-    start: calendarStart,
-    end: calendarEnd,
-  });
+  const checklist = (post.founderChecklistJson ?? {}) as Record<string, boolean>;
+  const checkedCount = Object.values(checklist).filter(Boolean).length;
+  const totalChecks = Object.keys(checklist).length || 7;
+
+  const when = post.scheduledFor ? new Date(post.scheduledFor) : null;
+  const postedAt = post.postedAt ? new Date(post.postedAt) : null;
 
   return (
-    <Tabs defaultValue="list">
-      <TabsList className="mb-4 flex h-auto w-full flex-wrap gap-1">
-        <TabsTrigger value="list">List</TabsTrigger>
-        <TabsTrigger value="week">Week board</TabsTrigger>
-        <TabsTrigger value="month">Month</TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="list" className="space-y-8">
-        <PostSection
-          title="Ready to post"
-          description="One tap per platform — caption goes to your clipboard, the composer opens, you review and post."
-          posts={ready}
-          appNames={props.appNames}
-          mode="ready"
-        />
-        <PostSection
-          title="Scheduled"
-          description="Drag posts on the Week board to reshuffle days."
-          posts={scheduled}
-          appNames={props.appNames}
-          mode="scheduled"
-        />
-        <PostSection
-          title="Posted"
-          description="Archive from the library if you want these out of sight."
-          posts={posted}
-          appNames={props.appNames}
-          mode="posted"
-        />
-      </TabsContent>
-
-      <TabsContent value="week">
-        <Card>
-          <CardHeader>
-            <CardTitle>This week</CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <DragDropContext onDragEnd={onDragEnd}>
-              <div className="flex min-w-[720px] gap-2">
-                {weekDays.map((day, index) => (
-                  <Droppable droppableId={`day-${index}`} key={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className={cn(
-                          "flex min-h-[280px] flex-1 flex-col rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-muted)]/40 p-2",
-                          snapshot.isDraggingOver && "ring-2 ring-[var(--brand-500)]",
-                        )}
-                      >
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">
-                          {format(day, "EEE d MMM")}
-                        </p>
-                        {postsForDay(day).map((post, idx) => (
-                          <Draggable
-                            draggableId={post.id}
-                            index={idx}
-                            key={post.id}
-                          >
-                            {(dragProvided) => (
-                              <div
-                                ref={dragProvided.innerRef}
-                                {...dragProvided.draggableProps}
-                                {...dragProvided.dragHandleProps}
-                                className="mb-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)] p-2 text-sm shadow-[var(--shadow-sm)]"
-                              >
-                                <p className="line-clamp-3 font-medium">
-                                  {post.baseContent || "(empty)"}
-                                </p>
-                                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-                                  {props.appNames[post.appId] ?? "App"}
-                                </p>
-                                <div className="mt-2 flex flex-wrap gap-1">
-                                  {PLATFORMS.slice(0, 3).map((p) => (
-                                    <Button key={p} size="sm" variant="outline" asChild>
-                                      <a
-                                        href={getComposerDeepLink(
-                                          p,
-                                          post.baseContent,
-                                        )}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                      >
-                                        {PLATFORM_LABELS[p]}
-                                      </a>
-                                    </Button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                ))}
-              </div>
-            </DragDropContext>
-            <p className="mt-4 text-xs text-[var(--color-text-muted)]">
-              Drag cards between days to reschedule while keeping the same time
-              of day.
-            </p>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      <TabsContent value="month">
-        <Card>
-          <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
-            <CardTitle>{format(monthCursor, "MMMM yyyy")}</CardTitle>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setMonthCursor((d) =>
-                    new Date(d.getFullYear(), d.getMonth() - 1, 1),
-                  )
-                }
-              >
-                Prev
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setMonthCursor((d) =>
-                    new Date(d.getFullYear(), d.getMonth() + 1, 1),
-                  )
-                }
-              >
-                Next
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase text-[var(--color-text-muted)]">
-              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-                <div key={d} className="py-2">
-                  {d}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {monthGrid.map((day) => {
-                const inMonth = isSameMonth(day, monthCursor);
-                const count = scheduled.filter(
-                  (p) =>
-                    p.scheduledFor && isSameDay(new Date(p.scheduledFor), day),
-                ).length;
-                return (
-                  <div
-                    key={day.toISOString()}
-                    className={cn(
-                      "min-h-[88px] rounded-[var(--radius-md)] border border-[var(--color-border)] p-2 text-left text-xs",
-                      inMonth
-                        ? "bg-[var(--color-bg-elevated)]"
-                        : "bg-[var(--color-bg-muted)]/40 text-[var(--color-text-muted)]",
-                    )}
-                  >
-                    <div className="font-semibold">{format(day, "d")}</div>
-                    {count > 0 && (
-                      <Badge variant="secondary" className="mt-1">
-                        {count} scheduled
-                      </Badge>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-
-      {pending && (
-        <p className="text-sm text-[var(--color-text-muted)]">Updating…</p>
+    <article
+      ref={ref}
+      className={cn(
+        "flex flex-col gap-3 rounded-[var(--radius-lg)] border bg-white p-4 transition-shadow",
+        isHighlighted
+          ? "border-[var(--violet-400)] shadow-[0_0_0_4px_var(--violet-100)]"
+          : "border-[var(--gray-200)]",
       )}
-    </Tabs>
-  );
-}
-
-function PostSection(props: {
-  title: string;
-  description: string;
-  posts: PostRow[];
-  appNames: Record<string, string>;
-  mode: "ready" | "scheduled" | "posted";
-}) {
-  const router = useRouter();
-  return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-base font-semibold tracking-tight">{props.title}</h2>
-        <p className="text-sm text-[var(--color-text-muted)]">
-          {props.description}
-        </p>
-      </div>
-      {props.posts.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-[var(--color-text-muted)]">
-            Nothing here yet.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {props.posts.map((post) => (
-            <Card key={post.id}>
-              <CardHeader className="space-y-1">
-                <CardTitle className="text-base">
-                  {props.appNames[post.appId] ?? "App"}
-                </CardTitle>
-                <p className="text-xs text-[var(--color-text-muted)]">
-                  {post.scheduledFor
-                    ? format(new Date(post.scheduledFor), "PPpp")
-                    : props.mode === "posted" && post.postedAt
-                      ? `Posted ${format(new Date(post.postedAt), "PPpp")}`
-                      : "No schedule"}
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <p className="line-clamp-4 whitespace-pre-wrap">
-                  {post.baseContent || "(empty)"}
-                </p>
-
-                {props.mode === "ready" && <HandoffPanel postId={post.id} />}
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <Button size="sm" variant="secondary" asChild>
-                    <Link href={`/compose?id=${post.id}`}>Edit</Link>
-                  </Button>
-                  {props.mode === "scheduled" && (
-                    <form
-                      className="flex flex-wrap items-center gap-2"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        const fd = new FormData(e.currentTarget);
-                        const dt = String(fd.get("dt"));
-                        if (!dt) return;
-                        const iso = new Date(dt).toISOString();
-                        void reschedulePost(post.id, iso).then((res) => {
-                          if ("error" in res && res.error) {
-                            toast.error(String(res.error));
-                          } else {
-                            toast.success("Updated.");
-                            router.refresh();
-                          }
-                        });
-                      }}
-                    >
-                      <Input
-                        type="datetime-local"
-                        name="dt"
-                        defaultValue={
-                          post.scheduledFor
-                            ? format(
-                                new Date(post.scheduledFor),
-                                "yyyy-MM-dd'T'HH:mm",
-                              )
-                            : ""
-                        }
-                        className="w-auto"
-                      />
-                      <Button size="sm" type="submit" variant="outline">
-                        Reschedule
-                      </Button>
-                    </form>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+    >
+      <header className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span
+            aria-hidden
+            className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ background: appColor }}
+          />
+          <p className="min-w-0 truncate text-xs font-semibold text-[var(--gray-900)]">
+            {appName}
+          </p>
+          {post.energyTag && (
+            <span className="shrink-0 rounded-full bg-[var(--violet-50)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--violet-700)]">
+              {post.energyTag === "high" ? "High energy" : "Low energy"}
+            </span>
+          )}
+          {post.isEvergreen && (
+            <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+              Evergreen
+            </span>
+          )}
         </div>
-      )}
-    </section>
+        {tab !== "posted" && (
+          <span
+            className={cn(
+              "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold",
+              checkedCount === totalChecks
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-[var(--gray-100)] text-[var(--gray-600)]",
+            )}
+            title={`${checkedCount} of ${totalChecks} checks`}
+          >
+            {checkedCount}/{totalChecks}
+          </span>
+        )}
+      </header>
+
+      <p className="line-clamp-4 whitespace-pre-wrap text-sm leading-relaxed text-[var(--gray-700)]">
+        {post.baseContent || (
+          <span className="italic text-[var(--gray-400)]">(empty draft)</span>
+        )}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-[var(--gray-500)]">
+        {tab === "posted" && postedAt && (
+          <>
+            <Icon name="CheckCircle" weight="fill" className="h-3 w-3 text-emerald-500" />
+            Posted {format(postedAt, "MMM d 'at' h:mm a")}
+          </>
+        )}
+        {tab !== "posted" && when && !editingTime && (
+          <>
+            <Icon name="ClockClockwise" className="h-3 w-3" />
+            <span>
+              {isSameDay(when, new Date())
+                ? `Today, ${format(when, "h:mm a")}`
+                : format(when, "MMM d 'at' h:mm a")}
+            </span>
+            <span className="text-[var(--gray-400)]">
+              · {formatDistanceToNow(when, { addSuffix: true })}
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditingTime(true)}
+              className="ml-auto text-[10px] font-semibold text-[var(--violet-600)] hover:underline"
+            >
+              Reschedule
+            </button>
+          </>
+        )}
+        {tab !== "posted" && editingTime && (
+          <div className="flex w-full items-center gap-1.5">
+            <Input
+              type="datetime-local"
+              value={dt}
+              onChange={(e) => setDt(e.target.value)}
+              className="h-7 flex-1 text-[11px]"
+            />
+            <button
+              type="button"
+              onClick={saveTime}
+              disabled={pending}
+              className="inline-flex h-7 items-center rounded-md bg-[var(--violet-600)] px-2 text-[10px] font-semibold text-white hover:bg-[var(--violet-700)] disabled:opacity-60"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingTime(false)}
+              className="text-[10px] font-semibold text-[var(--gray-500)] hover:underline"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
+
+      {tab === "ready" && <HandoffPanel postId={post.id} />}
+
+      <footer className="flex items-center justify-between border-t border-[var(--gray-150)] pt-3 text-[11px]">
+        <Link
+          href={`/compose?id=${post.id}`}
+          className="inline-flex items-center gap-1 font-semibold text-[var(--violet-600)] hover:underline"
+        >
+          <Icon name="PencilSimple" className="h-3 w-3" />
+          Edit
+        </Link>
+        {tab === "scheduled" && (
+          <Link
+            href="/queue/handoff"
+            className="inline-flex items-center gap-1 font-medium text-[var(--gray-600)] hover:text-[var(--gray-900)]"
+          >
+            Move to ready
+            <Icon name="ArrowRight" className="h-3 w-3" />
+          </Link>
+        )}
+      </footer>
+    </article>
   );
 }
