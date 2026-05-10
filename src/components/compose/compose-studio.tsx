@@ -558,27 +558,46 @@ function VariantCard({
   );
 }
 
+/**
+ * Sibling tile to VariantCard — keeps grid rhythm but reads as secondary.
+ * Whole tile is the affordance; opens the connections page where platforms
+ * are added, removed, or upgraded to direct publish.
+ */
 function AddRemovePlatformsCard() {
   return (
-    <article className="flex flex-col items-center justify-center gap-3 rounded-[var(--radius-lg)] border border-dashed border-[var(--pink-200)] bg-[var(--pink-50)]/60 p-4 text-center">
-      <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-[var(--violet-600)] shadow-sm">
-        <Icon name="Sparkle" weight="fill" className="h-4 w-4" />
-      </span>
-      <div>
-        <p className="text-sm font-semibold text-[var(--gray-900)]">
-          Add or remove platforms
+    <Link
+      href="/connections"
+      aria-label="Manage platforms in Connections"
+      className={cn(
+        "group flex min-w-0 flex-col overflow-hidden rounded-[var(--radius-lg)]",
+        "border border-dashed border-[var(--gray-200)] bg-white/40",
+        "transition-colors hover:border-[var(--violet-300)] hover:bg-[var(--violet-50)]/50",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--violet-400)]",
+      )}
+    >
+      <header className="flex items-center justify-between gap-2 border-b border-dashed border-[var(--gray-200)] px-3 py-2.5">
+        <span className="inline-flex min-w-0 items-center gap-1.5 truncate text-xs font-medium text-[var(--gray-500)] group-hover:text-[var(--violet-700)]">
+          <Icon name="Plus" className="h-3.5 w-3.5 shrink-0" />
+          <span className="truncate">Add platform</span>
+        </span>
+        <span className="text-[10px] tabular-nums text-[var(--gray-400)]">
+          {/* Match VariantCard's right-aligned meta slot */}
+        </span>
+      </header>
+
+      <div className="flex flex-1 flex-col items-start justify-between gap-3 px-3 py-3">
+        <p className="text-[11px] leading-relaxed text-[var(--gray-600)] group-hover:text-[var(--gray-700)]">
+          Connect another network or upgrade one to one-click publish.
         </p>
-        <p className="mt-0.5 text-[11px] text-[var(--gray-600)]">
-          Customize exactly where you share.
-        </p>
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[var(--violet-600)] group-hover:text-[var(--violet-700)]">
+          Manage in Connections
+          <Icon
+            name="ArrowRight"
+            className="h-3 w-3 transition-transform group-hover:translate-x-0.5"
+          />
+        </span>
       </div>
-      <Link
-        href="/connections"
-        className="inline-flex h-8 items-center rounded-[var(--radius-md)] border border-[var(--violet-200)] bg-white px-3 text-[11px] font-semibold text-[var(--violet-700)] hover:bg-[var(--violet-50)]"
-      >
-        Manage platforms
-      </Link>
-    </article>
+    </Link>
   );
 }
 
